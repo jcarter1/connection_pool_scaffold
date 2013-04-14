@@ -1,0 +1,32 @@
+*****************************************
+**          Classes & Members          **
+*****************************************
+
+-> public class OPConnectionPool implements ConnectionPool
+
+*attributes* URL, user, password, min_con 10, limit 200, always_open 5, delayiffull 'waitforever', open_cons (array list?), used_cons(same), more?
+
+*constructor* OPConnectionPool(String URL,...)  { this.URL = URL... createInitConns();}
+
+*constructor* OPTIONAL: OPConnectionPool(String URL, less/more variables to handle than above)  { this.URL = URL... createInitConns();}
+
+*destructor* KillPool() - only if no active connections
+
+*accessor* synchronized java.sql.Connection (aka Conn) GetConnection() throws SQLException
+
+*accessor* synchronized Conn ReleaseConnection(Conn connection) throws SQLException
+
+*private* createInitConns() - create min amount of connections
+
+*private* synchronized Conn createConn() - create connection and return it
+
+*private* getOpenConn() - return open connection and remove it from open conn list - where to createConnection() after this?
+
+*private* closeConn(Conn connection) - close connection
+
+*private* get methods for all attributes
+
+
+
+-> class Wrapper implements Connection { public Wrapper(Connection c) { this.c = c}  .... } implement all Connection functions and simply
+store time of access into *attribute* lastAccess
