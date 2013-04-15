@@ -1,0 +1,60 @@
+*****************************************
+**              questions              **
+*****************************************
+
+- thread safety! - look up goetz java concurrency in practice - will be resolved with synchronized methods/blocks and/or volatile variables
+
+- concurrency! - see same book, be as stateless as possible
+
+- strategy:
+
+* when to create a connection?
+-> at init up to min amount of connections
+-> as long as max amount of connections is not reached: whenever min amount of open connections is at default value (do this AFTER user has
+his connection)
+
+* when to close a connection?
+-> whenever user is done with it (releaseConnection() is called) and (A) available open connections are at default value or (B) number of
+total connections is at least at default + 1 (initial value). If these conditions are not true, add connection to available pool  
+
+* how many and which connection to close?
+-> always close user connection completely if number of connections > min amount (see below)
+
+* how to ensure connections are still good?
+-> can ask connections .isClosed()
+
+* what is a good max/min amount of connections allowed?
+-> min amount of connections: 10
+-> max amount of connections: 200
+-> default amount of always open connections: 5
+
+* how to ensure users don't break pool?
+-> clean code, test, test, test
+
+* any libraries to be used?
+-> to be seen
+
+* remove idle (in use connections that actually do nothing) connections after a certain amount of time down to min amount of connections?
+-> write Wrapper for Connections to keep time of last access to methods
+
+* after how much time?
+-> if possible: 15 minutes (likely not needed)
+
+* disconnect connections after a certain amount of used time? (like 1 hour)
+-> no, rather not disconnect active connections
+
+* How to ensure that there are always X amount of ready connections?
+-> use default amount of always open connections correctly. If upon new connection there are less than min amount of open connections
+available, open a new one (after giving the user an open connection)
+
+* How to make sure - when closing open connections - that the oldest ones are closed first?
+-> not sure if this will even be needed, but in case it does: the order in the open connections list should be sufficient to determine
+the "age" of the connections
+
+* How to set a Timeout Parameter for a new connection request when max number of connections is reached?
+-> see last example: http://stackoverflow.com/questions/2275443/how-to-timeout-a-thread
+-> also see java ExecutorService
+-> above is possibly too much: will see
+
+* What to do when the time passes and no connection could be established?
+-> reject - possibly with some kind of error message (see above)
