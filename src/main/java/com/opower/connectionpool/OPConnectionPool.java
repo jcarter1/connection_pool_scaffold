@@ -75,7 +75,7 @@ public class OPConnectionPool implements ConnectionPool
 		// the second part is done in a thread, so the user does not have to wait for it
 		if (!open_conns.isEmpty())
 		{
-			if (open_conns.size() <= min_open_conns     &&     open_conns.size() + used_conns.size() <= max_conns)
+			if (open_conns.size() < min_open_conns     &&     open_conns.size() + used_conns.size() <= max_conns)
 			{
 				create_new_conn.start();
 			}
@@ -144,4 +144,18 @@ public class OPConnectionPool implements ConnectionPool
 		return conn;
 	}
 
+	public Integer getMinConns()
+	{
+		return min_conns;
+	}
+	
+	public Integer getOpenConnsCount()
+	{
+		return open_conns.size();
+	}
+	
+	public Integer getUsedConnsCount()
+	{
+		return used_conns.size();
+	}
 }
