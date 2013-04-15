@@ -18,7 +18,7 @@ import java.sql.DriverManager;
  */
 public class OPConnectionPool implements ConnectionPool
 {
-	// private class attributes
+	// server connection attributes
 	private String serverURL;
 	private String user;
 	private String password;
@@ -38,7 +38,7 @@ public class OPConnectionPool implements ConnectionPool
 	private List<Connection> used_conns = Collections.synchronizedList(new ArrayList<Connection>());
 
 
-	
+	//constructor
 	public OPConnectionPool(String serverURL, String user, String password, Integer min_conns, Integer max_conns, Integer min_open_conns, Integer timeout) throws SQLException
 	{
 		this.serverURL = serverURL;
@@ -63,7 +63,7 @@ public class OPConnectionPool implements ConnectionPool
 	        {
 	        	try
 	        	{
-					used_conns.add(createConn());
+					open_conns.add(createConn());
 				}   catch (SQLException e)
 				{
 					e.printStackTrace();
