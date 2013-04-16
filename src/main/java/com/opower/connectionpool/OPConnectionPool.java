@@ -26,8 +26,6 @@ public class OPConnectionPool implements ConnectionPool
 	private Integer min_conns = 10;
 	// maximum number of existing (in use or not) connections for the pool
 	private Integer max_conns = 200;
-	// minimum number of always open connections (up to max_conns)
-	//private Integer min_open_conns = 5;
 	// wait time for getConnection() when the maximum number of connections has been reached and no
 	// open connections are available.
 	// If timeout = 0, wait time is indefinite and getConnection() waits until a connection opens up
@@ -40,14 +38,13 @@ public class OPConnectionPool implements ConnectionPool
 
 
 	//constructor
-	public OPConnectionPool(String serverURL, String user, String password, Integer min_conns, Integer max_conns,Integer timeout) throws SQLException
+	public OPConnectionPool(String serverURL, String user, String password, Integer min_conns, Integer max_conns, Integer timeout) throws SQLException
 	{
 		this.serverURL = serverURL;
 		this.user = user;
 		this.password = password;
 		this.min_conns = min_conns;
 		this.max_conns = max_conns;
-	//	this.min_open_conns = min_open_conns;
 		this.timeout = timeout;
 
 		createInitConns();
@@ -136,36 +133,27 @@ public class OPConnectionPool implements ConnectionPool
 			    	// if timeout=0: wait indefinitely until some connection has been closed
 			    	if (timeout==0)
 			    	{
-				
-				    	while (used_conns.size() == max_conns)
-				    	{
-					        // wait() will block this thread until another connection has been released and notify() has been called
-					        used_conns.wait();
-				    	}
-				    	
+			    		used_conns.wait();
 				    	Connection conn = createConn();
 						used_conns.add(conn);
 						return conn;
-
 				    }
 			    	
-			    	// wait for timeout amount of time until rejecting the request
+			    	// timeout is NOT 0. Wait for timeout amount of time until rejecting the request
 					else
 					{
-						if (used_conns.size() == max_conns)
-				    	{
-					        // wait() will wait max timeout (in ms) amount of time for another thread to call notify()
-							used_conns.wait(timeout);
-							if (used_conns.size() == max_conns)
-							{
-								// return null cause we timed out and no connection opened up
-								return null;
-							}
-				    	}
+						used_conns.wait(timeout);
 						
+						// check if we timed out
+						if (used_conns.size() == max_conns)
+						{
+							// return null because no connection opened up
+							return null;
+						}
+						
+						// we did not time out and can create a new connection now
 						else
 						{
-							System.out.println("yay something opened up");
 							Connection conn = createConn();
 							used_conns.add(conn);
 							return conn;
