@@ -3,8 +3,6 @@ package com.opower.connectionpool;
 import static org.junit.Assert.*;
 import org.junit.*;
 
-import org.h2.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -23,6 +21,7 @@ import java.sql.Statement;
 public class Test_OPConnectionPool {
 	
 	private OPConnectionPool OPCP;
+	private OPConnectionPool OPCP_timeout;
 	static Connection db_conn;
 	// minimum number of existing (in use or not) connections for the pool
 	private static Integer min_conns = 10;
@@ -43,7 +42,8 @@ public class Test_OPConnectionPool {
 	// initialize OPConnection_Pool
 	public void createOPCP() throws SQLException, NullPointerException
 	{
-		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 10000);
+		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 0);
+		OPCP_timeout = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 4000);
 	}
 	
 	@Test
@@ -141,7 +141,7 @@ public class Test_OPConnectionPool {
 			   {
 				   try
 				   {
-					   Thread.sleep(13000);
+					   Thread.sleep(3000);
 					   try
 					   {
 						   OPCP.releaseConnection(conn);
@@ -167,7 +167,7 @@ public class Test_OPConnectionPool {
 			Connection c200 = OPCP.getConnection();
 			Thread t = new Thread(new Delayed_release(c200));
 			t.start();
-			// this is connection max_conns + 1 and will wait until c200 was released
+			// this is connection max_conns + 1 and will wait until c200 was released - ~3 seconds
 			OPCP.getConnection();			
 		}   catch (SQLException e)
 		{
@@ -180,10 +180,12 @@ public class Test_OPConnectionPool {
 	@Test
 	public void testOPConnectionPoolMaxConnsTimeout() throws Throwable
 	{
+		// fill DB up to max_conns
 		for(int i=0; i < max_conns; i++)
 		{
-			OPCP.getConnection();
+			OPCP_timeout.getConnection();
 		}
-		assertEquals(null, OPCP.getConnection());
+		// this is connection max_conns +1 and will timeout and return null after ~4 seconds
+		assertNull(OPCP_timeout.getConnection());
 	}
 }
