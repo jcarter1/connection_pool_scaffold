@@ -3,12 +3,13 @@ package com.opower.connectionpool;
 import static org.junit.Assert.*;
 import org.junit.*;
 
-import java.sql.*;
-//import java.sql.Connection;
-//import java.sql.DriverManager;
-//import java.sql.ResultSet;
-//import java.sql.SQLException;
-//import java.sql.Statement;
+import org.h2.*;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * @assignment OPower Homework
@@ -21,43 +22,45 @@ import java.sql.*;
 
 public class Test_OPConnectionPool {
 	
-	OPConnectionPool OPCP;
+	private OPConnectionPool OPCP;
+	static Connection db_conn;
 	// minimum number of existing (in use or not) connections for the pool
 	private Integer min_conns = 10;
+	private Integer before_release;
 
-	//@BeforeClass
+	@BeforeClass
 	//create in memory h2 db here and fill with some data
 	public static void createDB() throws SQLException, ClassNotFoundException
 	{
 		// register driver
 		Class.forName("org.h2.Driver");
 		// create h2 DB in memory
-		Connection db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from './createTable.sql'\\;runscript from './popTable.sql'");
+		db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/createTable.sql'\\;runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/popTable.sql'");
 	}
 	
-	//@Before
+	@Before
 	// initialize OPConnection_Pool
-	public void createOPCP() throws SQLException
+	public void createOPCP() throws SQLException, NullPointerException
 	{
-		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "dennis", "test", min_conns, 200, 5, 0);
+		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, 200, 5, 0);
 	}
 	
 	@Test
-	public void testOPConnectionPoolExists()
+	public void testOPConnectionPoolExists() throws SQLException
 	{
 		// does connection pool exist
 		assertEquals(OPCP.getMinConns(), min_conns);
 	}
 
 	@Test
-	public void testOPConnectionPoolMinConns()
+	public void testOPConnectionPoolMinConns() throws SQLException
 	{
 		// did constructor create min_conns connections
 		assertEquals(OPCP.getOpenConnsCount(), min_conns);
 	}
 	
 	@Test
-	public void testOPConnectionPoolMaxConns()
+	public void testOPConnectionPoolMaxConns() throws SQLException
 	{
 		// will number of connections not exceed max_conns
 		// do this test later on
@@ -65,7 +68,7 @@ public class Test_OPConnectionPool {
 	}
 	
 	@Test
-	public void testOPConnectionPoolGetWorkingConnection()
+	public void testOPConnectionPoolGetWorkingConnection() throws SQLException
 	{
 		// does this return a working connection
 		// execute SQL statement and test result for correctness
@@ -77,15 +80,15 @@ public class Test_OPConnectionPool {
 	}
 
 	@Test
-	public void testOPConnectionPoolGetConnection_used_conns()
+	public void testOPConnectionPoolGetConnection_used_conns() throws SQLException
 	{
 		// is the returned connection added to used_conns?
-		Connection conn = OPCP.getConnection();
+		OPCP.getConnection();
 		assertEquals(OPCP.getUsedConnsCount(), new Integer(1)); 
 	}
 	
 	@Test
-	public void testReleaseConnection_used_conns()
+	public void testReleaseConnection_used_conns() throws SQLException
 	{
 		// is used_conns -1 when calling this function?
 		Connection conn = OPCP.getConnection();
@@ -94,31 +97,31 @@ public class Test_OPConnectionPool {
 	}
 	
 	@Test
-	public void testReleaseConnectionTo_open_conns()
+	public void testReleaseConnectionTo_open_conns() throws SQLException
 	{
 		// if (min_conns > used_conns.size() + open_conns.size())
 		// aka: if less than the minimum amount of connections are
 		// either open or in use:
 		// is open_conns increased by 1 when calling this function?
 		Connection conn = OPCP.getConnection();
-		private Integer before_release = OPCP.getOpenConnsCount();
+		before_release = OPCP.getOpenConnsCount();
+		before_release++;
 		OPCP.releaseConnection(conn);
-		assertEquals(before_release + 1 , OPCP.getOpenConnsCount());
+		assertEquals(before_release , OPCP.getOpenConnsCount());
 	}
 	
 	@Test
-	public void testReleaseConnectionClose()
+	public void testReleaseConnectionClose() throws SQLException
 	{
 		// if NOT (min_conns > used_conns.size() + open_conns.size())
 		// aka: opposite of previous test:
 		// is open_conns staying the same when calling this function?
-		Connection c1 = OPCP.getConnection();
-		Connection c2 = OPCP.getConnection();
-		Connection c3 = OPCP.getConnection();
-		Connection c4 = OPCP.getConnection();
-		Connection c5 = OPCP.getConnection();
+		for(int i = 0; i < 6; i++)
+		{
+			OPCP.getConnection();
+		}
 		Connection c6 = OPCP.getConnection();
-		private Integer before_release = OPCP.getOpenConnsCount();
+		Integer before_release = OPCP.getOpenConnsCount();
 		OPCP.releaseConnection(c6);
 		assertEquals(before_release , OPCP.getOpenConnsCount());
 	}

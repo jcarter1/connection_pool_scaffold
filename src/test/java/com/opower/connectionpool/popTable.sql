@@ -1,2 +1,2 @@
-INSERT INTO BestClasses values(1, \"Hunters\")
-INSERT INTO BestClasses values(2, \"all others\")
+INSERT INTO BestClasses
+VALUES ( '1', 'Hunters'),( '2', 'all others')
