@@ -25,7 +25,8 @@ public class Test_OPConnectionPool {
 	private OPConnectionPool OPCP;
 	static Connection db_conn;
 	// minimum number of existing (in use or not) connections for the pool
-	private Integer min_conns = 10;
+	private static Integer min_conns = 10;
+	private static Integer max_conns = 200;
 	private Integer before_release;
 
 	@BeforeClass
@@ -42,7 +43,7 @@ public class Test_OPConnectionPool {
 	// initialize OPConnection_Pool
 	public void createOPCP() throws SQLException, NullPointerException
 	{
-		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, 200, 5, 0);
+		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 10000);
 	}
 	
 	@Test
@@ -60,14 +61,6 @@ public class Test_OPConnectionPool {
 	}
 	
 	@Test
-	public void testOPConnectionPoolMaxConns() throws SQLException
-	{
-		// will number of connections not exceed max_conns
-		// do this test later on
-		fail("Not yet implemented");
-	}
-	
-	@Test
 	public void testOPConnectionPoolGetWorkingConnection() throws SQLException
 	{
 		// does this return a working connection
@@ -76,6 +69,7 @@ public class Test_OPConnectionPool {
 		Statement stmt = conn.createStatement();
 		ResultSet result = stmt.executeQuery("SELECT * FROM BestClasses");
 		result.next();
+
 		assertEquals(result.getString("Class"), "Hunters");
 	}
 
@@ -84,6 +78,7 @@ public class Test_OPConnectionPool {
 	{
 		// is the returned connection added to used_conns?
 		OPCP.getConnection();
+
 		assertEquals(OPCP.getUsedConnsCount(), new Integer(1)); 
 	}
 	
@@ -93,6 +88,7 @@ public class Test_OPConnectionPool {
 		// is used_conns -1 when calling this function?
 		Connection conn = OPCP.getConnection();
 		OPCP.releaseConnection(conn);
+
 		assertEquals(OPCP.getUsedConnsCount(), new Integer(0));
 	}
 	
@@ -105,9 +101,9 @@ public class Test_OPConnectionPool {
 		// is open_conns increased by 1 when calling this function?
 		Connection conn = OPCP.getConnection();
 		before_release = OPCP.getOpenConnsCount();
-		before_release++;
 		OPCP.releaseConnection(conn);
-		assertEquals(before_release , OPCP.getOpenConnsCount());
+		
+		assertEquals(++before_release , OPCP.getOpenConnsCount());
 	}
 	
 	@Test
@@ -116,13 +112,78 @@ public class Test_OPConnectionPool {
 		// if NOT (min_conns > used_conns.size() + open_conns.size())
 		// aka: opposite of previous test:
 		// is open_conns staying the same when calling this function?
-		for(int i = 0; i < 6; i++)
+		for(int i = 0; i < 15; i++)
 		{
 			OPCP.getConnection();
 		}
+		
 		Connection c6 = OPCP.getConnection();
-		Integer before_release = OPCP.getOpenConnsCount();
+		before_release = OPCP.getOpenConnsCount();
 		OPCP.releaseConnection(c6);
+
 		assertEquals(before_release , OPCP.getOpenConnsCount());
+	}
+	
+	@Test
+	public void testOPConnectionPoolMaxConnsDelayed() throws Throwable
+	{
+		// will number of connections not exceed max_conns?
+		class Delayed_release implements Runnable
+		{
+			private Connection conn;
+
+			   public Delayed_release(Connection conn)
+			   {
+			       this.conn = conn;
+			   }
+
+			   public void run()
+			   {
+				   try
+				   {
+					   Thread.sleep(13000);
+					   try
+					   {
+						   OPCP.releaseConnection(conn);
+					   }   catch (SQLException e)
+					   {
+						   e.printStackTrace();
+					   }
+				   }   catch (InterruptedException e)
+				   {
+					   e.printStackTrace();
+				   }
+			   }
+		}
+		
+		try
+		{
+			for(int i=0; i < max_conns-1; i++)
+			{
+				OPCP.getConnection();
+			}
+			
+					
+			Connection c200 = OPCP.getConnection();
+			Thread t = new Thread(new Delayed_release(c200));
+			t.start();
+			// this is connection max_conns + 1 and will wait until c200 was released
+			OPCP.getConnection();			
+		}   catch (SQLException e)
+		{
+			throw e.getCause();
+		}
+
+		assertEquals(max_conns, new Integer(OPCP.getOpenConnsCount() + OPCP.getUsedConnsCount()));
+	}
+	
+	@Test
+	public void testOPConnectionPoolMaxConnsTimeout() throws Throwable
+	{
+		for(int i=0; i < max_conns; i++)
+		{
+			OPCP.getConnection();
+		}
+		assertEquals(null, OPCP.getConnection());
 	}
 }

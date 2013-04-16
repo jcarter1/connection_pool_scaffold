@@ -27,7 +27,7 @@ public class OPConnectionPool implements ConnectionPool
 	// maximum number of existing (in use or not) connections for the pool
 	private Integer max_conns = 200;
 	// minimum number of always open connections (up to max_conns)
-	private Integer min_open_conns = 5;
+	//private Integer min_open_conns = 5;
 	// wait time for getConnection() when the maximum number of connections has been reached and no
 	// open connections are available.
 	// If timeout = 0, wait time is indefinite and getConnection() waits until a connection opens up
@@ -36,17 +36,18 @@ public class OPConnectionPool implements ConnectionPool
 	private List<Connection> open_conns = Collections.synchronizedList(new ArrayList<Connection>());
 	// list of all currently used connections
 	private List<Connection> used_conns = Collections.synchronizedList(new ArrayList<Connection>());
+	
 
 
 	//constructor
-	public OPConnectionPool(String serverURL, String user, String password, Integer min_conns, Integer max_conns, Integer min_open_conns, Integer timeout) throws SQLException
+	public OPConnectionPool(String serverURL, String user, String password, Integer min_conns, Integer max_conns,Integer timeout) throws SQLException
 	{
 		this.serverURL = serverURL;
 		this.user = user;
 		this.password = password;
 		this.min_conns = min_conns;
 		this.max_conns = max_conns;
-		this.min_open_conns = min_open_conns;
+	//	this.min_open_conns = min_open_conns;
 		this.timeout = timeout;
 
 		createInitConns();
@@ -56,59 +57,31 @@ public class OPConnectionPool implements ConnectionPool
 	@Override
 	public synchronized Connection getConnection() throws SQLException
 	{
-		// thread to create new connection while continuing with the program
-		Thread create_new_conn = new Thread()
-	    { 
-	        public void run()
-	        {
-	        	try
-	        	{
-					open_conns.add(createConn());
-				}   catch (SQLException e)
-				{
-					e.printStackTrace();
-				}
-		    }
-		};
-		
 		// return an open connection if available and create a new one as long as the maximum number of connections is not reached
-		// the second part is done in a thread, so the user does not have to wait for it
 		if (!open_conns.isEmpty())
 		{
-			if (open_conns.size() < min_open_conns     &&     open_conns.size() + used_conns.size() <= max_conns)
-			{
-				create_new_conn.start();
-			}
-			
 			return getOpenConn();
 		}
 		else
 		{
-			// maximum number of connections has been reached. If timeout = 0, wait here indefinitely, otherwise wait for timeout amount
-			// of time to get a connection. If still no connection after timeout has passed: return NULL/throw Exception.
-			if (timeout == 0)
-			{
-				Connection conn = createConn();
-				used_conns.add(conn);
-				return conn;
-			}
-			else
-			{
-				// dummy for now
-				Connection conn = getOpenConn();
-				return conn;
-			}
+			return getConnectionHandler();
 		}
 		
 		
 	}
 
 	@Override
-	public synchronized void releaseConnection(Connection conn) throws SQLException
+	public void releaseConnection(Connection conn) throws SQLException
 	{
-		// take conn out of used_conns
-		used_conns.remove(conn);
-
+		// take conn out of used_conns and call notify()
+		// notify() is needed to let the getConnectionHandler() know that a Connection has freed up
+		// which is needed if the max limit was previously reached
+		synchronized(used_conns)
+		{
+			used_conns.remove(conn);
+		    used_conns.notify();
+		}
+		
 		//release conn to open_conns to meet minimum amount of connections, else close connection entirely
 		if (min_conns > used_conns.size() + open_conns.size())
 		{
@@ -142,6 +115,69 @@ public class OPConnectionPool implements ConnectionPool
 		Connection conn = open_conns.remove(0);
 		used_conns.add(conn);
 		return conn;
+	}
+	
+	private Connection getConnectionHandler() throws SQLException
+	{
+		// if max connections has not been reached, create a new connection
+		if (used_conns.size() < max_conns)
+		{
+			Connection conn = createConn();
+			used_conns.add(conn);
+			return conn;
+		}
+		// if max connections has been reached
+		else
+		{
+			synchronized(used_conns)
+			{
+			    try
+			    {
+			    	// if timeout=0: wait indefinitely until some connection has been closed
+			    	if (timeout==0)
+			    	{
+				
+				    	while (used_conns.size() == max_conns)
+				    	{
+					        // wait() will block this thread until another connection has been released and notify() has been called
+					        used_conns.wait();
+				    	}
+				    	
+				    	Connection conn = createConn();
+						used_conns.add(conn);
+						return conn;
+
+				    }
+			    	
+			    	// wait for timeout amount of time until rejecting the request
+					else
+					{
+						if (used_conns.size() == max_conns)
+				    	{
+					        // wait() will wait max timeout (in ms) amount of time for another thread to call notify()
+							used_conns.wait(timeout);
+							if (used_conns.size() == max_conns)
+							{
+								// return null cause we timed out and no connection opened up
+								return null;
+							}
+				    	}
+						
+						else
+						{
+							System.out.println("yay something opened up");
+							Connection conn = createConn();
+							used_conns.add(conn);
+							return conn;
+						}
+					}
+			    }   catch (InterruptedException e)
+			        {
+			    		// Happens if someone interrupts your thread.
+			    	}
+			}
+		}
+		return null;
 	}
 
 	public Integer getMinConns()
