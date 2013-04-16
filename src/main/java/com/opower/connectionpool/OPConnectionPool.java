@@ -107,7 +107,7 @@ public class OPConnectionPool implements ConnectionPool
 	}
 
 	// returns an open connection from open_conns list
-	private Connection getOpenConn() throws SQLException
+	private Connection getOpenConn()
 	{
 		Connection conn = open_conns.remove(0);
 		used_conns.add(conn);

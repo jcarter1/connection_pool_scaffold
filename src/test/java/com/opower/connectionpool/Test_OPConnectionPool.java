@@ -40,7 +40,7 @@ public class Test_OPConnectionPool {
 	
 	@Before
 	// initialize OPConnection_Pool
-	public void createOPCP() throws SQLException, NullPointerException
+	public void createOPCP() throws SQLException
 	{
 		OPCP = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 0);
 		OPCP_timeout = new OPConnectionPool("jdbc:h2:mem:OPclassesDB", "", "", min_conns, max_conns, 4000);
