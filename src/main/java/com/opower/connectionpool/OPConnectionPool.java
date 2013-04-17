@@ -148,7 +148,7 @@ public class OPConnectionPool implements ConnectionPool
 						if (used_conns.size() == max_conns)
 						{
 							// return null because no connection opened up
-							return null;
+							throw new SQLException("All connections in use. Timed out trying to get one.");
 						}
 						
 						// we did not time out and can create a new connection now

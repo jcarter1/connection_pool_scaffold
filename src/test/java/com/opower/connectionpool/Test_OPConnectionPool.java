@@ -177,15 +177,14 @@ public class Test_OPConnectionPool {
 		assertEquals(max_conns, new Integer(OPCP.getOpenConnsCount() + OPCP.getUsedConnsCount()));
 	}
 	
-	@Test
-	public void testOPConnectionPoolMaxConnsTimeout() throws Throwable
+	@Test(expected=SQLException.class) 
+	public void testOPConnectionPoolMaxConnsTimeout() throws SQLException
 	{
-		// fill DB up to max_conns
-		for(int i=0; i < max_conns; i++)
+		// fill DB up to max_conns + 1
+		for(int i=0; i < max_conns+1; i++)
 		{
 			OPCP_timeout.getConnection();
 		}
-		// this is connection max_conns +1 and will timeout and return null after ~4 seconds
-		assertNull(OPCP_timeout.getConnection());
+		// this will timeout and throw an exception after ~4 seconds
 	}
 }
