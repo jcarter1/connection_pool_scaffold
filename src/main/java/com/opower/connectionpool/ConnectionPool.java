@@ -3,7 +3,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * TODO: Put instructions here (if any)
+ * The implemented Interface of OPConnectionPool
  */
 public interface ConnectionPool {
 
