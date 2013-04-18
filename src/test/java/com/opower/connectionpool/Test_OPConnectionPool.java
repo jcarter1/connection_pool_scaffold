@@ -35,7 +35,8 @@ public class Test_OPConnectionPool {
 		// register driver
 		Class.forName("org.h2.Driver");
 		// create h2 DB in memory
-		db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/createTable.sql'\\;runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/popTable.sql'");
+		//db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/createTable.sql'\\;runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/java/com/opower/connectionpool/popTable.sql'");
+		db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'classpath:scripts/createTable.sql'\\;runscript from 'classpath:scripts/popTable.sql'");
 	}
 	
 	@Before

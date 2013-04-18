@@ -1,12 +1,13 @@
 package com.opower.connectionpool;
 
 import java.util.*;
-//import java.util.concurrent.*;
-//import java.util.Collections.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.DriverManager;
+
+import org.apache.log4j.*;
+import org.apache.log4j.PropertyConfigurator;
 
 /**
  * @assignment OPower Homework
@@ -34,6 +35,8 @@ public class OPConnectionPool implements ConnectionPool
 	private List<Connection> open_conns = Collections.synchronizedList(new ArrayList<Connection>());
 	// list of all currently used connections
 	private List<Connection> used_conns = Collections.synchronizedList(new ArrayList<Connection>());
+	// log4j logger
+	private static final Logger logger = Logger.getLogger(OPConnectionPool.class);
 	
 
 
@@ -46,7 +49,9 @@ public class OPConnectionPool implements ConnectionPool
 		this.min_conns = min_conns;
 		this.max_conns = max_conns;
 		this.timeout = timeout;
-
+		
+		PropertyConfigurator.configure("log4j.properties");
+		
 		createInitConns();
 	}
 	
@@ -83,9 +88,12 @@ public class OPConnectionPool implements ConnectionPool
 		if (min_conns > used_conns.size() + open_conns.size())
 		{
 			open_conns.add(conn);
+			logger.debug("A formerly used connection has been released to open connections pool.");
 		}
 		else
 		{
+			logger.debug("Connection closed because minimum amount of connections has already been reached:");
+			logger.debug("Connection: " + conn);
 			conn.close();
 		}
 				
@@ -98,12 +106,22 @@ public class OPConnectionPool implements ConnectionPool
 		{
 			open_conns.add(createConn());
 		}
+		logger.debug("Amount of connections created by createInitConns(): " + open_conns.size());
 	}
 	
 	// returns a new connection
 	private Connection createConn() throws SQLException
 	{
-		return DriverManager.getConnection(serverURL, user, password);
+		try
+		{
+			return DriverManager.getConnection(serverURL, user, password);
+		}   catch (SQLException e)
+		{
+			logger.error("A Database connection could not be established.");
+			logger.error(e);
+		}
+		return null;
+
 	}
 
 	// returns an open connection from open_conns list
@@ -133,7 +151,9 @@ public class OPConnectionPool implements ConnectionPool
 			    	// if timeout=0: wait indefinitely until some connection has been closed
 			    	if (timeout==0)
 			    	{
+			    		logger.debug("Started indefinite wait loop due to max connections and timeout = 0.");
 			    		used_conns.wait();
+			    		logger.debug("Some other connection was closed, attempting to create a new one now.");
 				    	Connection conn = createConn();
 						used_conns.add(conn);
 						return conn;
@@ -142,18 +162,21 @@ public class OPConnectionPool implements ConnectionPool
 			    	// timeout is NOT 0. Wait for timeout amount of time until rejecting the request
 					else
 					{
+						logger.debug("Connection limit reached. Waiting " + timeout + "ms for one to open up.");
 						used_conns.wait(timeout);
 						
 						// check if we timed out
 						if (used_conns.size() == max_conns)
 						{
 							// return null because no connection opened up
+							logger.debug("Unfortunately time has passed and we timed out - no connection made.");
 							throw new SQLException("All connections in use. Timed out trying to get one.");
 						}
 						
 						// we did not time out and can create a new connection now
 						else
 						{
+							logger.debug("Connection became available before timeout reached.");
 							Connection conn = createConn();
 							used_conns.add(conn);
 							return conn;
@@ -161,7 +184,9 @@ public class OPConnectionPool implements ConnectionPool
 					}
 			    }   catch (InterruptedException e)
 			        {
-			    		// Happens if someone interrupts your thread.
+			    		logger.warn("The program has been interrupted.");
+			    		logger.warn(e);
+			    		logger.warn(e.getCause());
 			    	}
 			}
 		}
