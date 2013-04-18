@@ -15,7 +15,8 @@ import org.apache.log4j.PropertyConfigurator;
  * @purpose SQL connection pool implementation
  * @author Dennis Backhaus
  * @created 04/14/2013
- * @last_modified 04/14/2013
+ * @last_modified 04/18/2013
+ * @by Dennis Backhaus
  */
 public class OPConnectionPool implements ConnectionPool
 {

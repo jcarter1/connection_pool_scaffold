@@ -15,7 +15,8 @@ import java.sql.Statement;
  * @purpose Test file for OpConnectionPool.java
  * @author Dennis Backhaus
  * @created 04/14/2013
- * @last_modified 04/15/2013
+ * @last_modified 04/18/2013
+ * @by Dennis Backhaus
  */
 
 public class Test_OPConnectionPool {
@@ -35,7 +36,7 @@ public class Test_OPConnectionPool {
 		// register driver
 		Class.forName("org.h2.Driver");
 		// create h2 DB in memory
-		db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/resources/scripts/createTable.sql'\\;runscript from 'C:/Users/Dennis/git/connection_pool_scaffold/src/test/resources/scripts/popTable.sql'");
+		db_conn = DriverManager.getConnection("jdbc:h2:mem:OPclassesDB;INIT=runscript from 'classpath:scripts/createTable.sql'\\;runscript from 'classpath:scripts/popTable.sql'");
 	}
 	
 	@Before

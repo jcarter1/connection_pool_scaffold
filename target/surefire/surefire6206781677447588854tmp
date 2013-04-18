@@ -1,0 +1,25 @@
+#surefire
+#Thu Apr 18 12:14:43 EDT 2013
+testClassesDirectory=C\:\\Users\\Dennis\\git\\connection_pool_scaffold\\target\\test-classes
+classPathUrl.4=C\:\\Users\\Dennis\\.m2\\repository\\log4j\\log4j\\1.2.14\\log4j-1.2.14.jar
+forkMode=once
+classPathUrl.3=C\:\\Users\\Dennis\\.m2\\repository\\org\\easymock\\easymock\\2.5.2\\easymock-2.5.2.jar
+classPathUrl.2=C\:\\Users\\Dennis\\.m2\\repository\\junit\\junit\\4.8.1\\junit-4.8.1.jar
+useManifestOnlyJar=true
+classPathUrl.1=C\:\\Users\\Dennis\\git\\connection_pool_scaffold\\target\\classes
+reportsDirectory=C\:\\Users\\Dennis\\git\\connection_pool_scaffold\\target\\surefire-reports
+classPathUrl.0=C\:\\Users\\Dennis\\git\\connection_pool_scaffold\\target\\test-classes
+providerConfiguration=org.apache.maven.surefire.junit4.JUnit4Provider
+testSuiteDefinitionTestSourceDirectory=C\:\\Users\\Dennis\\git\\connection_pool_scaffold\\src\\test\\java
+surefireClassPathUrl.1=C\:\\Users\\Dennis\\.m2\\repository\\org\\apache\\maven\\surefire\\surefire-api\\2.10\\surefire-api-2.10.jar
+surefireClassPathUrl.0=C\:\\Users\\Dennis\\.m2\\repository\\org\\apache\\maven\\surefire\\surefire-junit4\\2.10\\surefire-junit4-2.10.jar
+runOrder=filesystem
+useSystemClassLoader=true
+excludes0=**/*$*
+isTrimStackTrace=true
+enableAssertions=true
+includes2=**/*TestCase.java
+failIfNoTests=false
+includes1=**/*Test.java
+includes0=**/Test*.java
+childDelegation=false
